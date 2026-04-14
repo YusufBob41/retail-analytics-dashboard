@@ -18,7 +18,6 @@ Additional dashboard views:
 
 ### Power BI Report
 
-Add your Power BI screenshot to `assets/powerbi-report.png`, then it will appear here automatically:
 
 ![Power BI Report](assets/powerbi-report.png)
 

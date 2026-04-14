@@ -1,0 +1,35 @@
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# Jupyter
+.ipynb_checkpoints/
+
+# IDE files
+.vscode/
+.idea/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Local data files (do not commit)
+data.csv
+data.xls
+veri.csv
+veri.xls
+*.xlsx
+*.xls
+
+# Logs
+*.log
+
+# Streamlit secrets
+.streamlit/secrets.toml

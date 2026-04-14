@@ -1,0 +1,6 @@
+streamlit
+pandas
+plotly
+pyodbc
+mlxtend
+scikit-learn

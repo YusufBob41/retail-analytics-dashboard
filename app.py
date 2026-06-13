@@ -40,7 +40,7 @@ def load_data_from_sql(server, database):
 # Load and combine the reporting views used by the dashboard.
 conn = pyodbc.connect(
 f"Driver={{SQL Server}};Server={server};Database={database};Trusted_Connection=yes;"
-@@ -42,30 +59,62 @@ def load_data_from_sql(server, database):
+
 conn.close()
 
 

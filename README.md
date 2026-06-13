@@ -13,8 +13,7 @@ End-to-end retail analytics application built on the classic **Northwind** datab
 ---
 
 ## 📸 Screenshots
-
-![Dashboard Overview](assets/dashboard-screenshot.png)
+![Dashboard Overview](assets/dashboard-5.png)
 
 <details>
 <summary>More screenshots</summary>
@@ -23,7 +22,7 @@ End-to-end retail analytics application built on the classic **Northwind** datab
 ![Top Profitable Products](assets/dashboard-2.png)
 ![Inventory Status](assets/dashboard-3.png)
 ![RFM Segmentation](assets/dashboard-4.png)
-![Market Basket](assets/dashboard-5.png)
+![Market Basket](assets/dashboard-screenshot.png)
 
 </details>
 

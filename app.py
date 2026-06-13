@@ -528,7 +528,15 @@ else:
 
 st.markdown("---")
 st.header("Power BI Report")
-# If embed is not available, use share link as a fallback.
+
+POWER_BI_IMAGE_CANDIDATES = (
+    "assets/powerbi-report.png",
+    "powerbi-report.png",
+)
+power_bi_image_path = next(
+    (path for path in POWER_BI_IMAGE_CANDIDATES if os.path.exists(path)),
+    None,
+)
 power_bi_share_url = get_secret_or_env("POWER_BI_SHARE_URL")
 default_embed_url = get_secret_or_env("POWER_BI_EMBED_URL") or ""
 power_bi_embed_url = st.text_input(
@@ -539,6 +547,14 @@ power_bi_embed_url = st.text_input(
 
 if power_bi_embed_url.strip():
     components.iframe(power_bi_embed_url.strip(), height=700, scrolling=True)
+elif power_bi_image_path:
+    st.image(
+        power_bi_image_path,
+        caption="Power BI dashboard (static export)",
+        use_container_width=True,
+    )
+    if power_bi_share_url:
+        st.link_button("Open Power BI report in a new tab", power_bi_share_url)
 else:
     if power_bi_share_url:
         st.info(
@@ -548,6 +564,6 @@ else:
         st.link_button("Open Power BI report in a new tab", power_bi_share_url)
     else:
         st.info(
-            "Set `POWER_BI_SHARE_URL` in `.streamlit/secrets.toml` "
-            "or paste an embed URL above to display your Power BI report."
+            "Add `assets/powerbi-report.png` to show a static Power BI export, "
+            "or set `POWER_BI_EMBED_URL` / `POWER_BI_SHARE_URL` in secrets."
         )

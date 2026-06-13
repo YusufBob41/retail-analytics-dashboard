@@ -71,7 +71,7 @@ def create_network_diagram(rules_df):
         hoverinfo="text",
         marker=dict(
             size=22, color=node_color, colorscale="Viridis", showscale=True,
-            colorbar=dict(thickness=15, title="Connections", xanchor="left", titleside="right"),
+            colorbar=dict(thickness=15, title=dict(text="Connections")),
         ),
         showlegend=False,
     )
@@ -576,13 +576,15 @@ else:
 
 
 # ── Power BI ──────────────────────────────────────────────────────────────────
+st.markdown("---")
+st.header("📈 Power BI Report")
 power_bi_path = next(
     (p for p in ("assets/powerbi-report.png", "powerbi-report.png") if os.path.exists(p)), None
 )
 if power_bi_path:
-    st.markdown("---")
-    st.header("📈 Power BI Report")
     st.image(power_bi_path, caption="Power BI Dashboard", use_container_width=True)
+else:
+    st.info("Power BI görseli bulunamadı. `assets/powerbi-report.png` dosyasını projeye ekle.")
 
 st.markdown("---")
 st.markdown(

@@ -1,57 +1,122 @@
+import os
+
+import numpy as np
 import pandas as pd
 import plotly.express as px
 import streamlit as st
 import streamlit.components.v1 as components
+import pyodbc
+import numpy as np
+import os
 from mlxtend.frequent_patterns import apriori, association_rules
 from sklearn.cluster import KMeans
 from sklearn.preprocessing import StandardScaler
-@@ -529,41 +528,20 @@ def load_dashboard_data():
-st.markdown("---")
-st.header("Power BI Report")
+from streamlit.errors import StreamlitSecretNotFoundError
 
-POWER_BI_IMAGE_CANDIDATES = (
-    "assets/powerbi-report.png",
-    "powerbi-report.png",
-)
-power_bi_image_path = next(
-    (path for path in POWER_BI_IMAGE_CANDIDATES if os.path.exists(path)),
-    (
-        path
-        for path in ("assets/powerbi-report.png", "powerbi-report.png")
-        if os.path.exists(path)
-    ),
-None,
-)
-power_bi_share_url = get_secret_or_env("POWER_BI_SHARE_URL")
-default_embed_url = get_secret_or_env("POWER_BI_EMBED_URL") or ""
-power_bi_embed_url = st.text_input(
-    "Power BI embed URL (optional)",
-    value=default_embed_url,
-    help="Paste the embed URL you get from 'Publish to web' or 'Embed in website/portal'.",
-)
+DEFAULT_CSV_PATH = "northwind_data.csv"
 
-if power_bi_embed_url.strip():
-    components.iframe(power_bi_embed_url.strip(), height=700, scrolling=True)
-elif power_bi_image_path:
-if power_bi_image_path:
-st.image(
-power_bi_image_path,
-        caption="Power BI dashboard (static export)",
-        caption="Power BI dashboard",
-use_container_width=True,
+
+st.set_page_config(page_title="Northwind Analytics Dashboard", layout="wide")
+st.title("Northwind Analytics Dashboard")
+
+
+def get_secret_or_env(key):
+    # Prefer Streamlit secrets; fallback to environment variables.
+    try:
+        return st.secrets.get(key) or os.getenv(key)
+    except StreamlitSecretNotFoundError:
+        return os.getenv(key)
+
+
+@st.cache_data(show_spinner=False)
+def load_data_from_csv(csv_path):
+    return pd.read_csv(csv_path)
+
+
+@st.cache_data(show_spinner=False)
+def load_data_from_sql(server, database):
+    import pyodbc
+
+# Load and combine the reporting views used by the dashboard.
+conn = pyodbc.connect(
+f"Driver={{SQL Server}};Server={server};Database={database};Trusted_Connection=yes;"
+@@ -42,30 +59,62 @@ def load_data_from_sql(server, database):
+conn.close()
+
+
+def get_secret_or_env(key):
+    # Prefer Streamlit secrets; fallback to environment variables.
+    try:
+        return st.secrets.get(key) or os.getenv(key)
+    except StreamlitSecretNotFoundError:
+        return os.getenv(key)
+def resolve_csv_path():
+    return get_secret_or_env("CSV_PATH") or DEFAULT_CSV_PATH
+
+
+def load_dashboard_data():
+    data_source = (get_secret_or_env("DATA_SOURCE") or "auto").strip().lower()
+    csv_path = resolve_csv_path()
+
+server = get_secret_or_env("SQL_SERVER")
+database = get_secret_or_env("SQL_DATABASE")
+    if data_source == "csv":
+        if not os.path.exists(csv_path):
+            st.error(f"CSV dataset not found: `{csv_path}`")
+            st.stop()
+        return load_data_from_csv(csv_path), "csv"
+
+    server = get_secret_or_env("SQL_SERVER")
+    database = get_secret_or_env("SQL_DATABASE")
+
+    if data_source == "sql":
+        if not server or not database:
+            st.error(
+                "SQL mode is enabled but connection settings are missing. "
+                "Set `SQL_SERVER` and `SQL_DATABASE` in secrets or environment variables."
+            )
+            st.stop()
+        try:
+            return load_data_from_sql(server, database), "sql"
+        except Exception as exc:
+            st.error(f"SQL connection/data fetch error: {exc}")
+            st.stop()
+
+    if server and database:
+        try:
+            return load_data_from_sql(server, database), "sql"
+        except Exception as exc:
+            if os.path.exists(csv_path):
+                st.warning(
+                    "SQL connection failed; falling back to bundled CSV dataset. "
+                    f"Details: {exc}"
+                )
+                return load_data_from_csv(csv_path), "csv"
+            st.error(f"SQL connection/data fetch error: {exc}")
+            st.stop()
+
+    if os.path.exists(csv_path):
+        return load_data_from_csv(csv_path), "csv"
+
+if not server or not database:
+st.error(
+        "SQL connection settings are missing. "
+        "Please set `SQL_SERVER` and `SQL_DATABASE` in `.streamlit/secrets.toml` "
+        "or as environment variables."
+        "No data source is available. Configure SQL secrets for local SQL Server, "
+        f"or commit `{DEFAULT_CSV_PATH}` and set `DATA_SOURCE = \"csv\"` for cloud deploy."
 )
-    if power_bi_share_url:
-        st.link_button("Open Power BI report in a new tab", power_bi_share_url)
-else:
-    if power_bi_share_url:
-        st.info(
-            "This share link cannot be opened inside an iframe (app.powerbi.com refused to connect). "
-            "You can open the report in a new tab using the button below, or paste an embed URL to display it here."
-        )
-        st.link_button("Open Power BI report in a new tab", power_bi_share_url)
-    else:
-        st.info(
-            "Add `assets/powerbi-report.png` to show a static Power BI export, "
-            "or set `POWER_BI_EMBED_URL` / `POWER_BI_SHARE_URL` in secrets."
-        )
-    st.info("Power BI report image not found. Add `assets/powerbi-report.png` to the project.")
+st.stop()
+
+try:
+    df = load_data_from_sql(server, database)
+except Exception as exc:
+    st.error(f"SQL connection/data fetch error: {exc}")
+    st.stop()
+
+df, data_source = load_dashboard_data()
+if data_source == "csv":
+    st.caption("Data source: bundled CSV dataset (cloud-friendly mode).")
+
+required_cols = [
+"OrderDate",

@@ -1,6 +1,6 @@
 # 📊 Northwind Analytics Dashboard
 
-[![Streamlit App](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://your-app-name.streamlit.app)
+[![Streamlit App](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://northwind-analytics-dashboard.streamlit.app)
 ![Python](https://img.shields.io/badge/Python-3.10+-blue?logo=python&logoColor=white)
 ![Streamlit](https://img.shields.io/badge/Streamlit-1.x-FF4B4B?logo=streamlit&logoColor=white)
 ![Plotly](https://img.shields.io/badge/Plotly-Interactive-3D4DB7?logo=plotly&logoColor=white)
@@ -8,7 +8,7 @@
 
 End-to-end retail analytics application built on the classic **Northwind** database. Combines SQL data modeling, machine learning, and interactive visualization in a single deployable Streamlit app.
 
-> 🔗 **[Live Demo →](https://your-app-name.streamlit.app)**
+> 🔗 **[Live Demo →](https://northwind-analytics-dashboard.streamlit.app)**
 
 ---
 

@@ -20,11 +20,20 @@ End-to-end retail analytics application built on the classic **Northwind** datab
 <summary>More screenshots</summary>
 
 ![Sales & Logistics](assets/dashboard-1.png)
-![Inventory](assets/dashboard-2.png)
-![RFM Segmentation](assets/dashboard-3.png)
-![Market Basket](assets/dashboard-4.png)
+![Top Profitable Products](assets/dashboard-2.png)
+![Inventory Status](assets/dashboard-3.png)
+![RFM Segmentation](assets/dashboard-4.png)
+![Market Basket](assets/dashboard-5.png)
 
 </details>
+
+### 📊 Power BI Report
+
+![Power BI Report](assets/powerbi-report.png)
+
+### 🗄️ Database Schema
+
+![Northwind Schema](assets/northwind-schema.png)
 
 ---
 

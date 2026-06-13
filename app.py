@@ -1,8 +1,10 @@
 import os
 
+import networkx as nx
 import numpy as np
 import pandas as pd
 import plotly.express as px
+import plotly.graph_objects as go
 import streamlit as st
 from mlxtend.frequent_patterns import apriori, association_rules
 from sklearn.cluster import KMeans
@@ -10,6 +12,125 @@ from sklearn.preprocessing import StandardScaler
 from streamlit.errors import StreamlitSecretNotFoundError
 
 DEFAULT_CSV_PATH = "northwind_data.csv"
+
+
+def create_network_diagram(rules_df):
+    G = nx.DiGraph()
+
+    for _, row in rules_df.iterrows():
+        G.add_edge(
+            row["antecedents"],
+            row["consequents"],
+            weight=row["lift"],
+            confidence=row["confidence"],
+        )
+
+    pos = nx.spring_layout(G, k=2, iterations=50, seed=42)
+
+    edge_x = []
+    edge_y = []
+    for edge in G.edges():
+        x0, y0 = pos[edge[0]]
+        x1, y1 = pos[edge[1]]
+        edge_x.extend([x0, x1, None])
+        edge_y.extend([y0, y1, None])
+
+    edge_trace = go.Scatter(
+        x=edge_x,
+        y=edge_y,
+        mode="lines",
+        line=dict(width=2, color="#888"),
+        hoverinfo="none",
+        showlegend=False,
+    )
+
+    node_x = []
+    node_y = []
+    node_text = []
+    node_color = []
+    for node in G.nodes():
+        x, y = pos[node]
+        node_x.append(x)
+        node_y.append(y)
+        node_text.append(node)
+        node_color.append(G.degree(node))
+
+    node_trace = go.Scatter(
+        x=node_x,
+        y=node_y,
+        mode="markers+text",
+        text=node_text,
+        textposition="top center",
+        hoverinfo="text",
+        marker=dict(
+            size=20,
+            color=node_color,
+            colorscale="Viridis",
+            showscale=True,
+            colorbar=dict(
+                thickness=15,
+                title="Popularity",
+                xanchor="left",
+                titleside="right",
+            ),
+        ),
+        showlegend=False,
+    )
+
+    fig = go.Figure(data=[edge_trace, node_trace])
+    fig.update_layout(
+        title="Product Association Network",
+        showlegend=False,
+        hovermode="closest",
+        height=600,
+        xaxis=dict(showgrid=False, zeroline=False, showticklabels=False),
+        yaxis=dict(showgrid=False, zeroline=False, showticklabels=False),
+    )
+    return fig
+
+
+def create_sunburst(rules_df):
+    ids = ["root"]
+    labels = ["All Products"]
+    parents = [""]
+    values = [0]
+    colors = [1.0]
+
+    for ant in rules_df["antecedents"].unique():
+        ant_id = f"ant::{ant}"
+        ids.append(ant_id)
+        labels.append(ant)
+        parents.append("root")
+        values.append(int((rules_df["antecedents"] == ant).sum()))
+        colors.append(float(rules_df.loc[rules_df["antecedents"] == ant, "lift"].mean()))
+
+    for _, row in rules_df.iterrows():
+        cons_id = f"cons::{row['antecedents']}::{row['consequents']}"
+        ids.append(cons_id)
+        labels.append(row["consequents"])
+        parents.append(f"ant::{row['antecedents']}")
+        values.append(1)
+        colors.append(float(row["lift"]))
+
+    fig = go.Figure(
+        go.Sunburst(
+            ids=ids,
+            labels=labels,
+            parents=parents,
+            values=values,
+            branchvalues="total",
+            marker=dict(
+                colors=colors,
+                colorscale="RdYlGn",
+                cmid=2,
+                colorbar=dict(title="Lift"),
+                line=dict(color="white", width=2),
+            ),
+            hovertemplate="<b>%{label}</b><br>Lift: %{color:.2f}<extra></extra>",
+        )
+    )
+    fig.update_layout(height=700, title="Product Association Hierarchy (Sunburst)")
+    return fig
 
 
 st.set_page_config(page_title="Northwind Analytics Dashboard", layout="wide")
@@ -507,23 +628,41 @@ else:
         if rules.empty:
             st.info("No rules found with this lift threshold.")
         else:
-            # Make rule itemsets readable in the table.
             rules = rules.sort_values("lift", ascending=False).copy()
-            rules["antecedents"] = rules["antecedents"].apply(lambda x: ", ".join(sorted(list(x))))
-            rules["consequents"] = rules["consequents"].apply(lambda x: ", ".join(sorted(list(x))))
-            show_rules = rules[["antecedents", "consequents", "support", "confidence", "lift"]].head(15)
-
-            st.dataframe(show_rules, use_container_width=True)
-            fig_rules = px.bar(
-                show_rules.head(10),
-                x="lift",
-                y="antecedents",
-                color="confidence",
-                hover_data=["consequents", "support"],
-                orientation="h",
-                title="Top Rules by Lift",
+            rules_copy = rules.copy()
+            rules_copy["antecedents"] = rules_copy["antecedents"].apply(
+                lambda x: ", ".join(sorted(list(x)))
             )
-            st.plotly_chart(fig_rules, use_container_width=True)
+            rules_copy["consequents"] = rules_copy["consequents"].apply(
+                lambda x: ", ".join(sorted(list(x)))
+            )
+
+            tab1, tab2, tab3 = st.tabs(["Rules Table", "Network", "Sunburst"])
+
+            with tab1:
+                show_rules = rules_copy[
+                    ["antecedents", "consequents", "support", "confidence", "lift"]
+                ].head(15)
+                st.dataframe(show_rules, use_container_width=True)
+
+                fig_rules = px.bar(
+                    show_rules.head(10),
+                    x="lift",
+                    y="antecedents",
+                    color="confidence",
+                    hover_data=["consequents", "support"],
+                    orientation="h",
+                    title="Top Rules by Lift",
+                )
+                st.plotly_chart(fig_rules, use_container_width=True)
+
+            with tab2:
+                fig_network = create_network_diagram(show_rules)
+                st.plotly_chart(fig_network, use_container_width=True)
+
+            with tab3:
+                fig_sunburst = create_sunburst(show_rules)
+                st.plotly_chart(fig_sunburst, use_container_width=True)
 
 st.markdown("---")
 st.header("Power BI Report")
